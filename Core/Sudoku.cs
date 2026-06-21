@@ -167,7 +167,7 @@ namespace Sudoku
                     if (count == 1)
                     {
                         counter++;
-                        Mat[sudokuRow, column] = i;
+                        mat[sudokuRow, column] = i;
                     }
                     if (count == 0)
                     {
@@ -221,7 +221,7 @@ namespace Sudoku
             int count = 0;
             if (mat[row, column] == 0)
             {
-                for (int i = 0; i < 10; i++)
+                for (int i = 1; i < 10; i++)
                 {
                     if (!IsInRow(i, row) && !IsInSquare(i, column, row) && !IsInColumn(i, column))
                     {
@@ -361,8 +361,8 @@ namespace Sudoku
             Replace(matrix);
             while (!flag)
             {
-                int row = random.Next(0, 8);
-                int column = random.Next(0, 8);
+                int row = random.Next(0, 9);
+                int column = random.Next(0, 9);
                 int num = random.Next(1, 9);
                 if (matrix[row, column] == 0 && !IsInColumn(num, column) && !IsInRow(num, row) && !IsInSquare(num, column, row))
                 {
@@ -425,8 +425,8 @@ namespace Sudoku
             matrix = ReturnReplace(matrix);
             while (count < 5)
             {
-                int row = random.Next(0, 8);
-                int column = random.Next(0, 8);
+                int row = random.Next(0, 9);
+                int column = random.Next(0, 9);
                 if (matrix[row, column] == 0)
                 {
                     SolveSudoku();
@@ -443,8 +443,8 @@ namespace Sudoku
             matrix = ReturnReplace(matrix);
             while (count < 10)
             {
-                int row = random.Next(0, 8);
-                int column = random.Next(0, 8);
+                int row = random.Next(0, 9);
+                int column = random.Next(0, 9);
                 if (matrix[row, column] == 0)
                 {
                     SolveSudoku();
@@ -462,8 +462,8 @@ namespace Sudoku
             matrix = ReturnReplace(matrix);
             while (count < 15)
             {
-                int row = random.Next(0, 8);
-                int column = random.Next(0, 8);
+                int row = random.Next(0, 9);
+                int column = random.Next(0, 9);
                 if (matrix[row, column] == 0)
                 {
                     SolveSudoku();

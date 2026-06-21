@@ -33,6 +33,16 @@ body.panel-open {
     overflow: hidden;
 }
 
+@media (min-width: 901px) {
+    body.panel-open {
+        overflow: auto;
+    }
+
+    body.panel-open .main {
+        padding-right: calc(var(--panel-width) + 24px);
+    }
+}
+
 /* ── Header ── */
 .header {
     background: var(--header-bg);
@@ -385,10 +395,6 @@ body.panel-open .side-panel {
 .panel-btn--primary:focus-visible {
     background: var(--accent-hover);
     border-color: var(--accent-hover);
-}
-
-.panel-btn--upload {
-    cursor: pointer;
 }
 
 .panel-btn:disabled {

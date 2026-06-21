@@ -38,7 +38,7 @@ public class SudokuService
 
         return new SudokuResponse
         {
-            Puzzle = GetMergedBoard(game),
+            Puzzle = GetBoard(game),
             Solved = false
         };
     }
@@ -48,16 +48,40 @@ public class SudokuService
         var puzzle = CloneGrid(grid);
         var game = new SudokuGame(0, 0, 0);
         game.Replace(ToMatrix(puzzle));
-        game.Mat = CloneToMatrix(puzzle);
 
         bool solved = game.SolveSudoku();
-        var solution = GetMergedBoard(game);
+        var board = GetBoard(game);
 
         return new SudokuResponse
         {
             Puzzle = puzzle,
-            Solution = solution,
-            Solved = solved
+            Solution = solved && IsValidCompleteBoard(board) ? board : null,
+            Solved = solved && IsValidCompleteBoard(board)
+        };
+    }
+
+    public SudokuResponse Fix(int[][] grid)
+    {
+        int cluesBefore = CountClues(grid);
+        if (cluesBefore == 0)
+        {
+            throw new ArgumentException("Fill in the board before removing extras.");
+        }
+
+        var puzzle = CloneGrid(grid);
+        var game = new SudokuGame(0, 0, 0);
+        game.Replace(ToMatrix(puzzle));
+
+        game.FixSudoku();
+        var fixedPuzzle = GetBoard(game);
+        int cluesAfter = CountClues(fixedPuzzle);
+
+        return new SudokuResponse
+        {
+            Puzzle = fixedPuzzle,
+            Solved = cluesAfter < cluesBefore,
+            CluesBefore = cluesBefore,
+            CluesAfter = cluesAfter
         };
     }
 
@@ -156,7 +180,6 @@ public class SudokuService
         var game = new SudokuGame(0, 0, 0);
         var matrix = ToMatrix(puzzle);
         game.Replace(matrix);
-        game.Mat = (int[,])matrix.Clone();
         return game;
     }
 
@@ -176,23 +199,62 @@ public class SudokuService
         }
     }
 
-    private static int[][] GetMergedBoard(SudokuGame game)
+    private static int[][] GetBoard(SudokuGame game)
     {
         var board = new int[9, 9];
         game.ReturnReplace(board);
+        return ToJagged(board);
+    }
 
+    private static bool IsValidCompleteBoard(int[][] board)
+    {
         for (int i = 0; i < 9; i++)
         {
             for (int j = 0; j < 9; j++)
             {
-                if (game.Mat[i, j] != 0)
+                int value = board[i][j];
+                if (value < 1 || value > 9)
                 {
-                    board[i, j] = game.Mat[i, j];
+                    return false;
                 }
             }
         }
 
-        return ToJagged(board);
+        for (int i = 0; i < 9; i++)
+        {
+            var row = new bool[10];
+            var col = new bool[10];
+            for (int j = 0; j < 9; j++)
+            {
+                if (row[board[i][j]] || col[board[j][i]])
+                {
+                    return false;
+                }
+                row[board[i][j]] = true;
+                col[board[j][i]] = true;
+            }
+        }
+
+        for (int boxRow = 0; boxRow < 9; boxRow += 3)
+        {
+            for (int boxCol = 0; boxCol < 9; boxCol += 3)
+            {
+                var seen = new bool[10];
+                for (int i = boxRow; i < boxRow + 3; i++)
+                {
+                    for (int j = boxCol; j < boxCol + 3; j++)
+                    {
+                        if (seen[board[i][j]])
+                        {
+                            return false;
+                        }
+                        seen[board[i][j]] = true;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     private static int[,] ToMatrix(int[][] grid)
@@ -208,8 +270,6 @@ public class SudokuService
         return matrix;
     }
 
-    private static int[,] CloneToMatrix(int[][] grid) => ToMatrix(grid);
-
     private static int[][] ToJagged(int[,] matrix)
     {
         var grid = new int[9][];
@@ -222,6 +282,22 @@ public class SudokuService
             }
         }
         return grid;
+    }
+
+    private static int CountClues(int[][] grid)
+    {
+        int count = 0;
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                if (grid[i][j] != 0)
+                {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private static int[][] CloneGrid(int[][] grid)

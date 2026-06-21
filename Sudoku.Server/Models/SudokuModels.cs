@@ -21,6 +21,8 @@ public class SudokuResponse
     public int[][] Puzzle { get; set; } = Array.Empty<int[]>();
     public int[][]? Solution { get; set; }
     public bool Solved { get; set; }
+    public int CluesBefore { get; set; }
+    public int CluesAfter { get; set; }
 }
 
 public class PdfRequest

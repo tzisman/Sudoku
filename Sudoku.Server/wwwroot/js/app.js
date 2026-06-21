@@ -7,14 +7,23 @@ const loadingText = document.getElementById('loading-text');
 const difficultySelect = document.getElementById('difficulty');
 const bookletCountSelect = document.getElementById('booklet-count');
 
-const actionButtons = document.querySelectorAll('.panel-btn:not(.panel-btn--upload)');
+const actionButtons = document.querySelectorAll('.panel-btn');
 const panelToggle = document.getElementById('panel-toggle');
 const panelBackdrop = document.getElementById('panel-backdrop');
 
 const API_TIMEOUT_MS = 90000;
+const FIX_TIMEOUT_MS = 180000;
 
 function createEmptyGrid() {
     return Array.from({ length: 9 }, () => Array(9).fill(0));
+}
+
+function showSolution(grid) {
+    renderGrid(solutionGrid, grid, false);
+    solutionSection.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        solutionSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
 }
 
 function renderGrid(container, grid, editable = false, prefilled = null) {
@@ -134,6 +143,13 @@ async function handleNew() {
 
 let currentPrefilled = null;
 
+function handleBlank() {
+    solutionSection.classList.add('hidden');
+    currentPrefilled = null;
+    renderGrid(puzzleGrid, createEmptyGrid(), true);
+    setStatus('blank board — fill in the cells');
+}
+
 async function handleSolve() {
     setLoading(true, 'solving...');
     setStatus('');
@@ -143,9 +159,10 @@ async function handleSolve() {
         const response = await apiPost('/api/sudoku/solve', { grid });
         const data = await response.json();
 
-        if (data.solution) {
-            renderGrid(solutionGrid, data.solution, false);
-            solutionSection.classList.remove('hidden');
+        if (data.solved && data.solution) {
+            showSolution(data.solution);
+        } else {
+            solutionSection.classList.add('hidden');
         }
 
         setStatus(data.solved ? 'solved!' : 'could not fully solve this puzzle', !data.solved);
@@ -156,34 +173,46 @@ async function handleSolve() {
     }
 }
 
-async function handleUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+function countClues(grid) {
+    return grid.flat().filter(v => v !== 0).length;
+}
 
-    setLoading(true, 'uploading...');
+async function handleFix() {
+    setLoading(true, 'removing extras...');
     setStatus('');
     solutionSection.classList.add('hidden');
-    currentPrefilled = null;
+
+    const grid = readGridFromDom();
+    if (countClues(grid) === 0) {
+        setStatus('fill in the board first', true);
+        setLoading(false);
+        return;
+    }
 
     try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = await apiPost('/api/sudoku/upload', formData);
+        const response = await apiPost('/api/sudoku/fix', { grid }, FIX_TIMEOUT_MS);
         const data = await response.json();
 
         currentPrefilled = data.puzzle.map(row => [...row]);
         renderGrid(puzzleGrid, data.puzzle, true, currentPrefilled);
-        if (data.solution) {
-            renderGrid(solutionGrid, data.solution, false);
-            solutionSection.classList.remove('hidden');
-        }
 
-        setStatus(data.solved ? 'uploaded and solved!' : 'uploaded — partial solve', !data.solved);
+        const before = data.cluesBefore ?? countClues(grid);
+        const after = data.cluesAfter ?? countClues(data.puzzle);
+
+        if (after < before) {
+            setStatus(`extras removed (${before} → ${after} clues)`);
+        } else {
+            setStatus('puzzle is already minimal');
+        }
     } catch (err) {
-        setStatus(err.message, true);
+        const msg = err.message || '';
+        if (msg.includes('405') || msg.includes('404')) {
+            setStatus('server is outdated — restart the app and try again', true);
+        } else {
+            setStatus(msg, true);
+        }
     } finally {
         setLoading(false);
-        e.target.value = '';
     }
 }
 
@@ -231,10 +260,11 @@ async function downloadBlob(response, filename) {
 }
 
 document.getElementById('btn-new').addEventListener('click', handleNew);
+document.getElementById('btn-blank').addEventListener('click', handleBlank);
 document.getElementById('btn-solve').addEventListener('click', handleSolve);
+document.getElementById('btn-fix').addEventListener('click', handleFix);
 document.getElementById('btn-pdf').addEventListener('click', handlePdf);
 document.getElementById('btn-booklet').addEventListener('click', handleBooklet);
-document.getElementById('file-upload').addEventListener('change', handleUpload);
 
 function setPanelOpen(open) {
     document.body.classList.toggle('panel-open', open);
@@ -261,4 +291,4 @@ try {
 } catch (_) {}
 
 renderGrid(puzzleGrid, createEmptyGrid(), true);
-setStatus('click new to start');
+setStatus('click blank board or new to start');

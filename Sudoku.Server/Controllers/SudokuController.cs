@@ -36,6 +36,25 @@ public class SudokuController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("fix")]
+    public ActionResult<SudokuResponse> Fix([FromBody] SudokuGridRequest request)
+    {
+        if (request.Grid.Length != 9 || request.Grid.Any(row => row.Length != 9))
+        {
+            return BadRequest("Grid must be 9x9.");
+        }
+
+        try
+        {
+            var response = _sudokuService.Fix(request.Grid);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("upload")]
     public async Task<ActionResult<SudokuResponse>> Upload(IFormFile file)
     {
