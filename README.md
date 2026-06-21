@@ -1,83 +1,107 @@
 # SudokuWeb
 
-אפליקציית ווב ליצירה, פתרון והדפסה של סודוקו. הפרויקט כולל שרת ASP.NET Core, ממשק משתמש סטטי, ולוגיקת Sudoku משותפת.
+A web application for creating, solving, and printing Sudoku puzzles. The project includes an ASP.NET Core server, a static frontend, and a shared Sudoku engine.
 
-## תכונות
+## Screenshots
 
-- **סודוקו חדש** — יצירת לוח חדש לפי רמת קושי (normal, mid, easy, very easy)
-- **פתרון** — פתרון לוח 9×9 שהוזן ידנית או נטען מהשרת
-- **העלאת קובץ** — טעינת לוח מקובץ `.txt` / `.csv` (81 ספרות, 0 = תא ריק)
-- **PDF** — הורדת לוח בודד כקובץ PDF
-- **חוברת (Booklet)** — יצירת PDF עם 1–15 לוחות סודוקו
-- **Swagger** — תיעוד API בזמן פיתוח
+### Home — empty board
 
-## דרישות
+![Home screen](docs/screenshots/01-home.png)
+
+### Side menu — controls & difficulty
+
+![Side menu](docs/screenshots/02-menu.png)
+
+### New puzzle
+
+![New puzzle](docs/screenshots/03-new-puzzle.png)
+
+### Solved puzzle
+
+![Solution view](docs/screenshots/05-solution.png)
+
+### Swagger API (Development)
+
+![Swagger UI](docs/screenshots/06-swagger.png)
+
+## Features
+
+- **New puzzle** — generate a board by difficulty (`normal`, `mid`, `easy`, `very easy`)
+- **Solve** — solve a 9×9 board entered manually or loaded from the server
+- **Upload** — load a board from a `.txt` / `.csv` file (81 digits, `0` = empty cell)
+- **PDF** — download a single puzzle as a PDF file
+- **Booklet** — generate a PDF with 1–15 Sudoku puzzles
+- **Swagger** — interactive API docs in Development mode
+
+## Requirements
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-## הרצה
+## Getting started
 
-מתוך תיקיית `SudokuWeb`:
+From the `SudokuWeb` folder:
 
 ```bash
 dotnet run --project Sudoku.Server
 ```
 
-או דרך Visual Studio — פתיחת `SudokuWeb.sln` והרצת פרויקט `Sudoku.Server`.
+Or open `SudokuWeb.sln` in Visual Studio and run the `Sudoku.Server` project.
 
-| פרופיל | כתובת |
-|--------|--------|
+| Profile | URL |
+|---------|-----|
 | HTTP | http://localhost:5161 |
 | HTTPS | https://localhost:7189 |
 | Swagger (Development) | `/swagger` |
-| ממשק המשתמש | `/` (דף הבית) |
+| Web UI | `/` |
 
-## מבנה הפרויקט
+## Project structure
 
 ```
 SudokuWeb/
-├── SudokuWeb.sln          # קובץ Solution
+├── SudokuWeb.sln          # Solution file
 ├── Core/
-│   └── Sudoku.cs          # לוגיקת Sudoku (מנוע המשחק)
-└── Sudoku.Server/         # שרת ASP.NET Core
-    ├── Program.cs         # הגדרת האפליקציה והשירותים
+│   └── Sudoku.cs          # Sudoku engine logic
+├── docs/
+│   └── screenshots/       # README screenshots
+└── Sudoku.Server/         # ASP.NET Core server
+    ├── Program.cs
     ├── Controllers/
     │   └── SudokuController.cs
     ├── Services/
-    │   ├── SudokuService.cs   # יצירה, פתרון, פרסור קבצים
-    │   └── PdfService.cs      # יצירת PDF (QuestPDF)
+    │   ├── SudokuService.cs   # Create, solve, parse files
+    │   └── PdfService.cs      # PDF generation (QuestPDF)
     ├── Models/
     │   └── SudokuModels.cs
-    └── wwwroot/           # ממשק משתמש (HTML / CSS / JS)
+    └── wwwroot/           # Frontend (HTML / CSS / JS)
         ├── index.html
         ├── css/site.css
         └── js/app.js
 ```
 
-`Core/Sudoku.cs` מקושר לפרויקט השרת דרך `<Compile Include>` — אין פרויקט Core נפרד.
+`Core/Sudoku.cs` is linked into the server project via `<Compile Include>` — there is no separate Core project.
 
 ## API
 
-בסיס הנתיב: `/api/sudoku`
+Base route: `/api/sudoku`
 
-| Method | נתיב | תיאור |
-|--------|------|--------|
-| POST | `/new` | יצירת סודוקו חדש |
-| POST | `/solve` | פתרון לוח 9×9 |
-| POST | `/upload` | העלאת קובץ (multipart/form-data, שדה `file`) |
-| POST | `/pdf` | הורדת PDF של לוח בודד |
-| POST | `/booklet` | הורדת PDF חוברת (1–15 לוחות) |
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `/new` | Create a new Sudoku puzzle |
+| POST | `/solve` | Solve a 9×9 grid |
+| POST | `/upload` | Upload a file (`multipart/form-data`, field `file`) |
+| POST | `/pdf` | Download a single puzzle as PDF |
+| POST | `/booklet` | Download a booklet PDF (1–15 puzzles) |
 
-### דוגמאות
+### Examples
 
-**סודוקו חדש (רמת קושי easy):**
+**New puzzle (easy difficulty):**
 
 ```json
 POST /api/sudoku/new
 { "difficulty": "easy" }
 ```
 
-**פתרון:**
+**Solve:**
 
 ```json
 POST /api/sudoku/solve
@@ -89,14 +113,14 @@ POST /api/sudoku/solve
 }
 ```
 
-**חוברת:**
+**Booklet:**
 
 ```json
 POST /api/sudoku/booklet
 { "count": 5, "difficulty": "mid" }
 ```
 
-### תגובה (`SudokuResponse`)
+### Response (`SudokuResponse`)
 
 ```json
 {
@@ -106,29 +130,43 @@ POST /api/sudoku/booklet
 }
 ```
 
-## רמות קושי
+## Difficulty levels
 
-| ערך | תיאור |
-|-----|--------|
-| `null` / `normal` | לוח מלא (ברירת מחדל) |
-| `mid` | רמת ביניים |
-| `easy` | קל |
-| `veryeasy` | קל מאוד |
+| Value | Description |
+|-------|-------------|
+| `null` / `normal` | Full board (default) |
+| `mid` | Medium |
+| `easy` | Easy |
+| `veryeasy` | Very easy |
 
-## פורמט קובץ להעלאה
+## Upload file format
 
-- 81 ספרות (0–9), לפי סדר השורות
-- `0` = תא ריק
-- רווחים, שורות חדשות ותווים לא-ספרתיים מתעלמים מהם
-- סיומות נתמכות: `.txt`, `.csv`
+- 81 digits (`0`–`9`), row by row
+- `0` = empty cell
+- Whitespace and non-digit characters are ignored
+- Supported extensions: `.txt`, `.csv`
 
-## תלויות NuGet
+## NuGet dependencies
 
-| חבילה | שימוש |
-|-------|--------|
-| QuestPDF | יצירת קבצי PDF |
+| Package | Purpose |
+|---------|---------|
+| QuestPDF | PDF generation |
 | Swashbuckle.AspNetCore | Swagger / OpenAPI |
 
-## מנוע Sudoku
+## Sudoku engine
 
-לוגיקת המשחק נמצאת ב-`Core/Sudoku.cs` וכוללת יצירת לוח, בדיקות תקינות, פתרון (backtracking), והגדרת רמות קושי.
+Game logic lives in `Core/Sudoku.cs` and includes board generation, validation, backtracking solver, and difficulty presets.
+
+## Regenerating screenshots
+
+If the UI changes, run the app and capture fresh screenshots:
+
+```bash
+dotnet run --project Sudoku.Server --urls "http://localhost:5177"
+cd docs
+npm install playwright
+npx playwright install chromium
+SUDOKU_URL=http://localhost:5177 node capture-screenshots.mjs
+```
+
+Screenshots are saved to `docs/screenshots/`.

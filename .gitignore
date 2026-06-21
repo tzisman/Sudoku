@@ -5,3 +5,4 @@ obj/
 *.suo
 *.swp
 *~
+docs/node_modules/
